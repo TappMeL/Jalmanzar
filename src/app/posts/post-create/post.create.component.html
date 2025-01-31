@@ -1,10 +1,5 @@
-<div class="container">
-    <h4>Title</h4>
-    <mat-card class="center-content">
-        <form>
-            <textarea cols="30" rows="20" [(ngModel)]="EnterValue" placeholder="Input here..."></textarea>
-            <button type="button" (click)="onAddPost()">Save</button>
-        </form>
-    </mat-card>
-    <p>{{ NewPost }}</p>
-</div>
+<mat-card class="center-content">
+    <textarea cols="30" rows="20" [(ngModel)]="EnterValue" placeholder="Input here..."></textarea>
+    <button (click)="onAddPost()">Save</button>
+</mat-card>
+<p>{{ NewPost }}</p>
