@@ -44,7 +44,6 @@ export class PostsService {
         });
 
     }
-
     deletePost(postId: string){
         this.http.delete('http://localhost:3000/api/posts/' + postId)
         .subscribe(() => {
