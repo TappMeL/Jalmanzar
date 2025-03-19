@@ -1,14 +1,21 @@
 mat-card{
     margin: 1rem auto;
     width: 30%;
-  }
+}
   
-  mat-form-field {
+mat-form-field {
     width: 100%;
     margin: 1rem 0;
-  }
-  button {
+}
+button {
     display: block;
     width: 30%;
     margin: 1rem auto;
-  }
+}
+mat-error{
+    color: red;
+}
+.spinner {
+    display: block;
+    margin: auto;
+}
