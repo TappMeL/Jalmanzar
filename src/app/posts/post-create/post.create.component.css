@@ -1,21 +1,56 @@
-mat-card{
+mat-card {
     margin: 1rem auto;
-    width: 30%;
-}
+    width: 80%;
+    max-width: 800px;
+  }
   
-mat-form-field {
+  mat-form-field {
+    display: block;
     width: 100%;
     margin: 1rem 0;
-}
-button {
-    display: block;
-    width: 30%;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  button {
+    margin: 1rem 0;
+    width: 200px;
+  }
+  
+  mat-spinner {
     margin: 1rem auto;
-}
-mat-error{
-    color: red;
-}
-.spinner {
-    display: block;
-    margin: auto;
-}
+  }
+  
+  input[type="file"] {
+    visibility: hidden;
+  }
+  
+  .image-preview {
+    height: 5rem;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+  }
+  
+  .image-preview img {
+    height: 100%;
+  }
+  
+  .image-upload {
+    width: 100%;
+    margin: 1rem 0;
+    display: flex;
+    text-align: center;
+  }
+  
+  .full-width {
+    width: 100%;
+  }
+  
+  .form-container {
+    width: 100%;
+    padding: 1rem;
+  }
