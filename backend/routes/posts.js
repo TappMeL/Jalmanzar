@@ -85,11 +85,10 @@ router.put("/:id", upload, (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
     try {
-        const pageSize = parseInt(req.query.pagesize) || 0; 
-        const currentPage = parseInt(req.query.currentpage) || 0; 
+        const pageSize = parseInt(req.query.pagesize); 
+        const currentPage = parseInt(req.query.currentpage); 
 
         let postQuery = PostModel.find();
-
         if (pageSize > 0 && currentPage > 0) {
             postQuery = postQuery.skip(pageSize * (currentPage - 1)).limit(pageSize);
         }
@@ -100,7 +99,7 @@ router.get("/", async (req, res, next) => {
         res.status(200).json({
             message: "Posts fetched successfully!",
             posts: documents,
-            totalPosts: totalPosts 
+            totalPosts: totalPosts
         });
     } catch (error) {
         console.error("Error fetching posts:", error);

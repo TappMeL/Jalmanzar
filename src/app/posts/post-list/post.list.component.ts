@@ -11,7 +11,7 @@ import { PageEvent } from '@angular/material/paginator';
 })
 export class PostListComponent implements OnInit, OnDestroy {
   totalposts = 10;
-  postperpage = 3;
+  postperpage = 2;
   pageSizeOption = [1, 2, 5, 10];
   posts: Post[] = [];
   private postsSub!: Subscription;
