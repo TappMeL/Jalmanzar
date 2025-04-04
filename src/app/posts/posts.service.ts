@@ -12,24 +12,27 @@ export class PostsService {
 
     constructor(private http: HttpClient, private router: Router) {}
 
-    getPosts() {
-        this.http.get<{ message: string, posts: any }>('http://localhost:3000/api/posts')
+    getPosts(pagesize: number, currentPage: number) {
+        const queryParams = `?pagesize=${pagesize}&currentpage=${currentPage}`;
+        this.http
+            .get<{ message: string; posts: any; totalPosts: number }>(
+                'http://localhost:3000/api/posts' + queryParams
+            )
             .pipe(
                 map((postData) => {
-                    return postData.posts.map((post: any) => ({
-                        id: post._id,
-                        title: post.title,
-                        content: post.content,
-                        imagePath: post.imagePath
-                    }));
-                }),
-                catchError(error => {
-                    console.error("Fetching posts failed!", error);
-                    return throwError(error);
+                    return {
+                        posts: postData.posts.map((post: any) => ({
+                            id: post._id,
+                            title: post.title,
+                            content: post.content,
+                            imagePath: post.imagePath,
+                        })),
+                        totalPosts: postData.totalPosts,
+                    };
                 })
             )
-            .subscribe((transformedPosts) => {
-                this.posts = transformedPosts;
+            .subscribe((transformedData) => {
+                this.posts = transformedData.posts;
                 this.postsUpdated.next([...this.posts]);
             });
     }

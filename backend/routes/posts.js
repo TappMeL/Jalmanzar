@@ -83,17 +83,30 @@ router.put("/:id", upload, (req, res, next) => {
         });
 });  
 
-router.get("/", async (req, res) => {  
+router.get("/", async (req, res, next) => {
     try {
-        const posts = await PostModel.find();
-        res.status(200).json({  
-            message: "Posts fetched successfully!",  
-            posts: posts  
+        const pageSize = parseInt(req.query.pagesize) || 0; 
+        const currentPage = parseInt(req.query.currentpage) || 0; 
+
+        let postQuery = PostModel.find();
+
+        if (pageSize > 0 && currentPage > 0) {
+            postQuery = postQuery.skip(pageSize * (currentPage - 1)).limit(pageSize);
+        }
+
+        const documents = await postQuery; 
+        const totalPosts = await PostModel.countDocuments(); 
+
+        res.status(200).json({
+            message: "Posts fetched successfully!",
+            posts: documents,
+            totalPosts: totalPosts 
         });
     } catch (error) {
+        console.error("Error fetching posts:", error);
         res.status(500).json({ message: "Fetching posts failed!", error: error.message });
     }
-});  
+});
 
 router.get("/:id", (req, res, next) => {
   PostModel.findById(req.params.id).then(post => {
