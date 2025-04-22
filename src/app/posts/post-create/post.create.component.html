@@ -12,6 +12,7 @@
             Title is required and must be at least 3 characters.
           </mat-error>
       </mat-form-field>
+
       <mat-form-field class="full-width">
           <textarea 
             rows="6" 
@@ -22,7 +23,8 @@
           <mat-error *ngIf="form.get('content')?.invalid && form.get('content')?.touched">
             Content is required and must be at least 3 characters.
           </mat-error>
-        </mat-form-field>
+      </mat-form-field>
+
       <div class="image-upload">
           <button 
             mat-stroked-button 
@@ -39,9 +41,12 @@
             <img [src]="imagePreview" alt="Form image preview">
           </div>
       </div>
+
       <button 
         mat-raised-button 
-        color="primary" type="submit" [disabled]="form.invalid">
+        color="primary" 
+        type="submit" 
+        [disabled]="form.invalid">
         Save Post
       </button>
   </form>

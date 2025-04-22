@@ -1,23 +1,32 @@
 import { Injectable } from "@angular/core";
 import { Subject, Observable, throwError } from "rxjs";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Post } from "./post.model";
 import { Router } from "@angular/router";
 import { map, catchError } from "rxjs/operators";
 
 @Injectable({ providedIn: 'root' })
 export class PostsService {
-    posts: Post[] = [];
-    private postsUpdated = new Subject<Post[]>();
+    private posts: Post[] = [];
+    private postsUpdated = new Subject<{ posts: Post[], totalPosts: number }>();
 
     constructor(private http: HttpClient, private router: Router) {}
 
-    getPosts(pagesize: number, currentPage: number) {
-        const queryParams = `?pagesize=${pagesize}&currentpage=${currentPage}`;
-        this.http
-            .get<{ message: string; posts: any; totalPosts: number }>(
-                'http://localhost:3000/api/posts' + queryParams
-            )
+    private getAuthHeaders() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('No token found!');  // Handle missing token
+        }
+        return new HttpHeaders({
+            'Authorization': `Bearer ${token}`
+        });
+    }
+
+    getPosts(pagesize: number, currentpage: number) {
+        const queryParams = `?pagesize=${pagesize}&currentpage=${currentpage}`;
+        const headers = this.getAuthHeaders();
+
+        this.http.get<{ message: string, posts: any, totalPosts: number }>('http://localhost:3000/api/posts' + queryParams, { headers })
             .pipe(
                 map((postData) => {
                     return {
@@ -25,33 +34,43 @@ export class PostsService {
                             id: post._id,
                             title: post.title,
                             content: post.content,
-                            imagePath: post.imagePath,
+                            imagePath: post.imagePath
                         })),
-                        totalPosts: postData.totalPosts,
+                        totalPosts: postData.totalPosts
                     };
+                }),
+                catchError(error => {
+                    console.error("Error fetching posts:", error);
+                    return throwError(() => error);
                 })
-            )
-            .subscribe((transformedData) => {
+            ).subscribe((transformedData) => {
                 this.posts = transformedData.posts;
-                this.postsUpdated.next([...this.posts]);
+                this.postsUpdated.next({
+                    posts: [...this.posts],
+                    totalPosts: transformedData.totalPosts
+                });
             });
     }
 
-    getPostUpdatedListener() {
+    getPostUpdatedListener(): Observable<{ posts: Post[], totalPosts: number }> {
         return this.postsUpdated.asObservable();
     }
 
     getPost(id: string): Observable<Post> {
+        const headers = this.getAuthHeaders();
+
         return this.http.get<{ _id: string; title: string; content: string; imagePath: string }>(
-            `http://localhost:3000/api/posts/${id}`
+            `http://localhost:3000/api/posts/${id}`, { headers }
         ).pipe(
-            map(postData => {
-                return {
-                    id: postData._id,
-                    title: postData.title,
-                    content: postData.content,
-                    imagePath: postData.imagePath
-                };
+            map(postData => ({
+                id: postData._id,
+                title: postData.title,
+                content: postData.content,
+                imagePath: postData.imagePath
+            })),
+            catchError(error => {
+                console.error("Error fetching post:", error);
+                return throwError(() => error);
             })
         );
     }
@@ -62,10 +81,11 @@ export class PostsService {
         postData.append('content', content);
         postData.append('image', image, title);
 
+        const headers = this.getAuthHeaders();
+
         this.http
             .post<{ message: string; post: Post }>(
-                'http://localhost:3000/api/posts',
-                postData
+                'http://localhost:3000/api/posts', postData, { headers }
             )
             .subscribe({
                 next: (responseData) => {
@@ -76,60 +96,59 @@ export class PostsService {
                         imagePath: responseData.post.imagePath
                     };
                     this.posts.push(post);
-                    this.postsUpdated.next([...this.posts]);
+                    this.postsUpdated.next({ posts: [...this.posts], totalPosts: this.posts.length });
                     this.router.navigate(['/']);
-                }
+                },
+                error: (err) => console.error("Error in addPost:", err)
             });
     }
-    
 
     updatePost(id: string, title: string, content: string, image: File | string) {
         let postData: FormData | Post;
         
         if (typeof image === 'object') {
-            // If a new file is selected
             postData = new FormData();
             postData.append('id', id);
             postData.append('title', title);
             postData.append('content', content);
             postData.append('image', image, title);
         } else {
-            // If no new file is selected
-            postData = {
-                id: id,
-                title: title,
-                content: content,
-                imagePath: image
-            };
+            postData = { id, title, content, imagePath: image };
         }
 
+        const headers = this.getAuthHeaders();
+
         this.http
-            .put<{ message: string, post: Post }>(`http://localhost:3000/api/posts/${id}`, postData)
+            .put<{ message: string, post?: Post }>(`http://localhost:3000/api/posts/${id}`, postData, { headers })
             .subscribe({
                 next: (response) => {
-                    const updatedPosts = [...this.posts];
-                    const oldPostIndex = updatedPosts.findIndex(p => p.id === id);
-                    const post: Post = {
-                        id: id,
-                        title: title,
-                        content: content,
-                        imagePath: response.post.imagePath
-                    };
-                    updatedPosts[oldPostIndex] = post;
-                    this.posts = updatedPosts;
-                    this.postsUpdated.next([...this.posts]);
+                    const oldPostIndex = this.posts.findIndex(p => p.id === id);
+                    if (oldPostIndex !== -1) {
+                        this.posts[oldPostIndex] = {
+                            id,
+                            title,
+                            content,
+                            imagePath: response.post?.imagePath || this.posts[oldPostIndex].imagePath
+                        };
+                        this.postsUpdated.next({ posts: [...this.posts], totalPosts: this.posts.length });
+                    }
                     this.router.navigate(['/']);
-                }
+                },
+                error: (err) => console.error("Error in updatePost:", err)
             });
     }
 
     deletePost(postId: string) {
-        this.http.delete(`http://localhost:3000/api/posts/${postId}`)
-            .subscribe(() => {
-                console.log('Deleted');
-                this.posts = this.posts.filter(post => post.id !== postId);
-                this.postsUpdated.next([...this.posts]);
-                this.router.navigate(["/"]);
+        const headers = this.getAuthHeaders();
+
+        this.http.delete(`http://localhost:3000/api/posts/${postId}`, { headers })
+            .subscribe({
+                next: () => {
+                    this.posts = this.posts.filter(post => post.id !== postId);
+                    this.postsUpdated.next({ posts: [...this.posts], totalPosts: this.posts.length });
+                    this.router.navigate(["/"]);
+                },
+                error: (err) => console.error("Error in deletePost:", err)
             });
     }
 }
